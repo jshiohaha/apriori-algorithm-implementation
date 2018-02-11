@@ -25,82 +25,110 @@ from functools import reduce
 def main():
     global N
     global integer_to_data
+    global data_to_integer
+
     min_confidence = 0
     min_support = 0
+    input_filename = ''
+    output_filename = ''
 
     arg_length = len(sys.argv)
 
-    if arg_length > 5:
+    if arg_length > 9:
         print("Too many parameters. Exiting...")
         sys.exit()
-    elif arg_length == 4:
-        print("Invalid number of paramters. Exiting...")
-        sys.exit()
     else:
-        if arg_length > 2:
-            if '-s' in sys.argv:
-                idx = sys.argv.index('-s')
+        # Grab input filename
+        if '-i' in sys.argv:
+            idx = sys.argv.index('-i')
 
-                try:
-                    min_support = float(sys.argv[idx+1])
-                    print("Using the specified value for min_support: " + str(min_support))
-                except:
-                    print("Incorrect paramter specification. Exiting...")
-                    sys.exit()
+            if isinstance(sys.argv[idx+1], str):
+                input_filename = sys.argv[idx+1]
+                print("Using the specified value for input filename: " + str(input_filename))
+            else:
+                print("Incorrect paramter specification. Exiting...")
+                sys.exit()
 
-            if '-c' in sys.argv:
-                idx = sys.argv.index('-c')
+        # Grab output filename
+        if '-o' in sys.argv:
+            idx = sys.argv.index('-o')
 
-                try:
-                    min_confidence = float(sys.argv[idx+1])
-                    print("Using the specified value for min_confidence: " + str(min_confidence))
-                except:
-                    print("Incorrect paramter specification. Exiting...")
-                    sys.exit()
+            if isinstance(sys.argv[idx+1], str):
+                output_filename = sys.argv[idx+1]
+                print("Using the specified value for output filename: " + str(output_filename))
+            else:
+                print("Incorrect paramter specification. Exiting...")
+                sys.exit()
 
-            if min_confidence == 0:
-                min_confidence = .75
-                print("Using the default value for min_confidence: " + str(min_confidence))
-            if min_support == 0:
-                min_support = .5
-                print("Using the default value for min_support: " + str(min_confidence))
+        # Grab support amount
+        if '-s' in sys.argv:
+            idx = sys.argv.index('-s')
 
-        else:
-            min_support=.5
-            min_confidence=.75
-            print("Starting using default min_support (" + str(min_support) + ") and min_confidence (" + str(min_confidence) + ")")
+            try:
+                min_support = float(sys.argv[idx+1])
+                print("Using the specified value for min_support: " + str(min_support))
+            except:
+                print("Incorrect paramter specification. Exiting...")
+                sys.exit()
+
+        # Grab confidence amount
+        if '-c' in sys.argv:
+            idx = sys.argv.index('-c')
+
+            try:
+                min_confidence = float(sys.argv[idx+1])
+                print("Using the specified value for min_confidence: " + str(min_confidence))
+            except:
+                print("Incorrect paramter specification. Exiting...")
+                sys.exit()
+
+        # double check to make sure that support and confidence are not equal to 0
+        if min_confidence == 0:
+            min_confidence = .75
+            print("Using the default value for min_confidence: " + str(min_confidence))
+        if min_support == 0:
+            min_support = .5
+            print("Using the default value for min_support: " + str(min_confidence))
+
+    header_arr, file_contents = parse_arff_file(input_filename)
+    encoded_data, data_to_integer, integer_to_data = modify_original_csv_data(header_arr, file_contents)
+
+    print(">> Creating transaction list and generating items")
+    transaction_list, items = get_transactions_and_items_data(encoded_data)
+    N = len(transaction_list)
+    run_apriori_and_generate_rules(transaction_list, items, min_support, min_confidence, output_filename)
 
 
-    filename = 'Data/encoded-vote.csv'
-    print(">> Reading transaction and items")
-    transactions, items = get_transactions_and_items_data(filename)
-    N = len(transactions)
-    integer_to_data = load_dict_data('integer_to_data')
-
-    run_apriori_and_generate_rules(transactions, items, min_support, min_confidence)
-
-
-def run_apriori_and_generate_rules(transactions, items, min_support, min_confidence):
+def run_apriori_and_generate_rules(transactions, items, min_support, min_confidence, output_filename):
     itemsets_arr, global_itemset_dict, frequency_set = apriori(transactions, items, min_support)
 
     # parse and create dictionary from serialized integer encoded dictionary
     association_rules = derive_association_rules(global_itemset_dict, frequency_set, min_support, min_confidence)
 
     if len(association_rules) == 0:
-        print("No association rules to print")
+        print("No association rules to serialize")
     else:
-        counter = 1
-        threshold = 10
-        print(">> Printing association rules sorted by confidence in descending order")
-        for x in sorted(association_rules, key=lambda x: x[1], reverse=True):
-            rule, confidence = x[0], x[1]
-            if counter > threshold:
-                break
+        print(">> Writing association rules to " + str(output_filename) + " sorted by confidence in descending order")
+        serialize_rules(association_rules, output_filename)
 
-            left_side, right_side = rule
-            print("Rule: " + str(left_side) + " -> : " + str(right_side) + ", confidence: " + str(confidence))
-            counter += 1
 
+def serialize_rules(association_rules, output_filename):
+    file = open(output_filename, 'w')
+    count = 1
+    for x in sorted(association_rules, key=lambda x: x[1], reverse=True):
+        rule, confidence = x[0], x[1]
+
+        left_side, right_side = rule
+        left_side_list, left_support = left_side
+        right_side_list, right_support = right_side
+
+        left = " ".join(left_side_list) + " " + str(left_support)
+        right = " ".join(right_side_list) + " " + str(right_support)
+        conf = "<conf: (" + str(confidence) + ")>"
+        rule = left + " ==> " + right + " " + conf
+        file.write("Rule " + str(count) + ": " + rule + "\n")
+        count += 1
+    file.close()
 
 '''
     ----------------------------------------------------------------------------------------------------
@@ -200,13 +228,16 @@ def derive_association_rules(itemsets_dict, frequency_set, min_support, min_conf
                     denominator = get_item_support(set_of_subsets, frequency_set)
                     confidence = round((numerator / denominator), 2)
 
+                    numerator_count = get_item_support_count(item, frequency_set)
+                    denominator_count = get_item_support_count(item, frequency_set)
+
                     if  min_confidence <= confidence:
                         set_of_subsets = convert_itemset_ints_to_strs(set_of_subsets)
                         difference = convert_itemset_ints_to_strs(difference)
 
                         # effectively groups the two parts of the rule together so that we
                         # can easily read/parse later
-                        new_rule = ((tuple(set_of_subsets)), tuple(difference)), confidence
+                        new_rule = (((list(set_of_subsets), numerator_count)), (list(difference), denominator_count)), confidence
                         association_rules.append(new_rule)
     print(">> Finished generating association rules. Found " + str(len(association_rules)) + " rules.")
     return association_rules
@@ -217,6 +248,10 @@ def get_item_support(item, frequency_set):
     return float(item_frequency)/N
 
 
+def get_item_support_count(item, frequency_set):
+    return frequency_set[item]
+
+
 '''
     ----------------------------------------------------------------------------------------------------
                                             UTILITY METHODS                                             
@@ -224,23 +259,23 @@ def get_item_support(item, frequency_set):
 '''
 
 
-def get_transactions_and_items_data(filename):
+def get_transactions_and_items_data(encoded_data):
     transaction_list = []
     items = set()
 
-    with open(filename, 'r') as csvfile:
-        reader = csv.reader(csvfile, delimiter=' ')
-        for transaction in reader:
-            transaction = transaction[0].split(',')
-            # creating a frozenset for each transaction because
-            # each transaction should never be changed, and
-            # it will allow us to use set properties and methods
-            # which are probably much faster than our own code
-            transaction_instance = frozenset(transaction)
-            transaction_list.append(transaction_instance)
+    # with open(filename, 'r') as csvfile:
+    #     reader = csv.reader(csvfile, delimiter=' ')
+    for transaction in encoded_data:
+        transaction = transaction.split(',')
+        # creating a frozenset for each transaction because
+        # each transaction should never be changed, and
+        # it will allow us to use set properties and methods
+        # which are probably much faster than our own code
+        transaction_instance = frozenset(transaction)
+        transaction_list.append(transaction_instance)
 
-            for item in transaction_instance:
-                items.add(frozenset([item]))
+        for item in transaction_instance:
+            items.add(frozenset([item]))
     return transaction_list, items
 
 
@@ -260,28 +295,18 @@ def subsets(arr):
     return subsets[1:]
 
 
-def load_dict_data(name):
-    dictionary = dict()
-    with open("Data/serialized-" + name + ".json") as json_data:
-        dictionary = json.load(json_data)
-    return dictionary
-
-
-def read_weka_rules():
-    lines = [line for line in open('Data/weka_rules_formatted.txt')]
-    return lines
-
-
 def convert_itemset_ints_to_strs(itemset):
     set_of_subsets_arr = []
     for element in list(itemset):
-        set_of_subsets_arr.append(integer_to_data[str(element)])
+        data = integer_to_data[str(element)]
+        set_of_subsets_arr.append(data)
     return set(set_of_subsets_arr)
 
 
 '''
-    Note: The vote.arff dataset was manually converted to a vote.csv file representing the
-    same data.
+    ----------------------------------------------------------------------------------------------------
+                                    ARFF FILE PARSING & CONVERSION METHODS                                            
+    ----------------------------------------------------------------------------------------------------
 
     All methods from here on deal with transforming the vote.csv data set into one that
     we can use for the apriori algorithm. Namely, the transaction data we learned about
@@ -289,11 +314,12 @@ def convert_itemset_ints_to_strs(itemset):
     of an itemset is {1, 2, 3} and an association rule is {1,3} -> {2}. However, the y or n
     data in the columns of the vote.arff file is not fit for running the apriori algorithm.
 
-    So, you will find methed comments down below, but I essentially do the following:
+    They essentially deal with the following:
 
-    1. Change each column from just y or n to a version where the header column is prepended.
+    1. Parse the arff file into the headers and then the actual csv contents of the file 
+    2. Change each column from just y or n to a version where the header column is prepended.
        --> Example: a 'y' in the handicapped-infants column becomes 'handicapped-infants-n'
-    2. As I was changing the column names, I kept track of how many new column names we
+    3. As I was changing the column names, I kept track of how many new column names we
        generated and created two dictionaries: one to allow us to go from changed column names
        to integer and integer to changed column names.
        |
@@ -305,28 +331,35 @@ def convert_itemset_ints_to_strs(itemset):
 '''
 
 
-def modify_original_csv(filename):
-    header_arr, file_contents = load_file_data_with_header(filename)
-    result_array, data_to_integer, integer_to_data = change_file_data(header_arr, file_contents)
-    encoded_data = create_encoded_data(result_array, data_to_integer)
-
-    write_changed_file_data(result_array, "altered-vote")
-    write_changed_file_data(encoded_data, "encoded-vote")
-    dump_dict_data(data_to_integer, "data_to_integer")
-    dump_dict_data(integer_to_data, "integer_to_data")
-
-
-def load_file_data_with_header(filename):
+def parse_arff_file(filename):
     file_contents = []
+    header_arr = []
+    data = []
+    data_start = False
+    with open(filename) as fp:  
+        line = fp.readline()
 
-    with open(filename, 'r') as csvfile:
-        reader = csv.reader(csvfile, delimiter=' ')
-        for row in reader:
-            line = row[0].strip()
-            file_contents.append(line)
+        while line:
+            line = line.split(' ')
+            if line[0] == '@attribute':
+                header_arr.append(line[1])
+            elif line[0][:-1] == '@data':
+                data_start = True
+                line = fp.readline()
+                continue
 
-    header_arr = file_contents[0].split(',')
-    return header_arr, file_contents[1:]
+            if data_start:
+                file_contents.append(line[0][:-1])
+            line = fp.readline()
+
+    return header_arr, file_contents
+
+
+def modify_original_csv_data(header_arr, file_contents):
+    result_array, d_to_i, i_to_d = change_file_data(header_arr, file_contents)
+    encoded_data = create_encoded_data(result_array, d_to_i)
+
+    return encoded_data, d_to_i, i_to_d
 
 
 def change_file_data(header, file_data):
@@ -345,7 +378,7 @@ def change_file_data(header, file_data):
 
             if newElement not in data_to_integer:
                 data_to_integer[newElement] = idx
-                integer_to_data[idx] = newElement
+                integer_to_data[str(idx)] = newElement
                 idx += 1
 
         new_line = ','.join(map(str,temp_arr))
@@ -366,20 +399,6 @@ def create_encoded_data(file_data, data_to_int):
         new_line = ','.join(map(str,temp_arr))
         result_array.append(new_line)
     return result_array
-
-
-def write_changed_file_data(file_data, name):
-    file = open("Data/" + name + ".csv", "w")
-    for x in file_data:
-        file.write(x + '\n')
-    file.close()
-
-
-def dump_dict_data(dictionary, name):
-    file = open("Data/serialized-" + name + ".json", "w")
-    result = json.dumps(dictionary, indent=4)
-    file.write(result)
-    file.close()
 
 
 if __name__ == '__main__':
