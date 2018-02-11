@@ -1,5 +1,21 @@
-It should be noted that `apriori.py` was written in `Python 3.5.3`. To run the program, you can specify the input file with `-i `, the output file with `-o `, the 
-minimum support with `-s support_number`, the confidence with `-c confidence_number`. If any of the parameters are left out, the program will exit with an error.
+**Issues**:
+- Sometimes our output varies from Weka on support count. For example, for the first 51 lines of vote.arff, Weka produces this
+
+`Class=democrat 20 ==> physician-fee-freeze=n 19 <conf:(0.95)>`
+
+and we produce this,
+
+`Class=democrat 19 ==> physician-fee-freeze=n 19 <conf: (0.95)>`
+
+I would be inclided to think that the way in which we count support would be wrong, but earlier in its rules, Weka produced this:
+
+`adoption-of-the-budget-resolution=y 19 ==> Class=democrat 19 <conf:(1)>`
+
+As one can see, `Class=democrat` uses a value of 20 in one place and 19 in another. I'm not sure why this is.
+
+===========================================================================================================================
+
+It should be noted that `apriori.py` was written in `Python 3.5.3`. To run the program, you can specify the input file with `-i `, the output file with `-o `, the minimum support with `-s support_number`, the confidence with `-c confidence_number`. If any of the parameters are left out, the program will exit with an error.
 
 If `python3` is not the default version of python, then you must use this command:
 
