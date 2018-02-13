@@ -72,12 +72,12 @@ def generate_itemsets_with_adequate_support(items, transactions, min_support, fr
                 frequency_set[item] += 1
                 local_frequency_set[item] += 1
 
-    num_items = len(transactions)
+    num_transactions = len(transactions)
     # iterate through the local_frequency_set, which contains
     # a count of how many times each itemset appeared in the list
     # of transactions. (key, value) => (item, count)
     for i, c in local_frequency_set.items():
-        support = float(c)/num_items
+        support = float(c)/num_transactions
 
         if (support) >= min_support:
             temp_itemset.add(i)

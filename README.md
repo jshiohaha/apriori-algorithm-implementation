@@ -19,11 +19,17 @@ It should be noted that `apriori.py` was written in `Python 3.5.3`. To run the p
 
 Please note that the command you run depends on your relative working directory. For example, if you're in the `src/` folder, you will want to directly reference `runApriori.py`. If you're in the root folder of the repository, you will want to use `src/runApriori.py`. Further, if `python3` is not the default version of python, then you must use this command:
 
-`python3 runApriori.py -i /Data/vote.arff -c .9 -s .5 -o output.txt`
+`python3 runApriori.py -i path-to/Data/vote.arff -c .9 -s .5 -o output.txt`
 
 Otherwise, you can simply run this command:
 
-`python runApriori.py -i /Data/vote.arff -c .9 -s .5 -o output.txt`
+`python runApriori.py -i path-to/Data/vote.arff -c .9 -s .5 -o output.txt`
+
+To run test the runtime of the Apriori algorithm as the `minimum_support` goes to 0, you can use the following command:
+
+`python runApriori.py --stress-test -i path-to/Data/vote.arff`
+
+Please note that as you get to a minimum support value of less than `0.3`, the algorithm
 
 **Assignment Outline**:
 

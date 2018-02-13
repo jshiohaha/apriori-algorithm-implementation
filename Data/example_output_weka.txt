@@ -20,4 +20,3 @@ Best rules found:
  8. export-administration-act-south-africa=y Class=democrat 255 ==> physician-fee-freeze=n 246    <conf:(0.96)> lift:(1.63) lev:(0.22) [94] conv:(10.38)
  9. Class=democrat 267 ==> export-administration-act-south-africa=y 255    <conf:(0.96)> lift:(1.11) lev:(0.06) [26] conv:(2.93)
 10. physician-fee-freeze=n 258 ==> export-administration-act-south-africa=y Class=democrat 246    <conf:(0.95)> lift:(1.63) lev:(0.22) [94] conv:(8.21)
-
