@@ -169,7 +169,7 @@ def stress_test_apriori(input_filename):
     min_support = 1.0
     support_delta = 0.1
     fixed_confidence = 0.9
-    lower_bound = 0
+    lower_bound = .3
 
     runtime = []
     rules = []
@@ -187,9 +187,11 @@ def stress_test_apriori(input_filename):
 
         min_support = min_support - support_delta
 
-    x_axis = np.arange(lower_bound, 1, support_delta)
-    width = .45
-    plt.plot(x_axis, runtime, color='g')
+    # we have to add one to the upper bound of the array because of the exclusive property 
+    x_axis = np.arange(lower_bound, 1+support_delta, support_delta)
+    x_axis = x_axis[::-1]
+    width = .3
+    # plt.plot(x_axis, runtime, color='g')
     plt.bar(x_axis, rules, width, color='r', label='Number of Rules')
     plt.xlabel('Level of Support (%)')
     plt.ylabel('Number of seconds')

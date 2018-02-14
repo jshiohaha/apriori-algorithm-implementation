@@ -52,12 +52,10 @@ Hand in a report along with the listing of your program, the output generated fr
 
     -- Generate the association rules along with their support and confidence.
         ----> the support and confidence for the top rules seem to be a bit off from Weka's
-    -- Plot the runtime of your algorithm and the number of rules generated as a function of
-       “minimum support.”
-    -- Use the same data set to derive association rules in Weka and compare them to those
-       derived from your program.
+    -- Plot the number of rules generated as a function of “minimum support.”
     -- Report for assignment
-
+        -- Talk about algorithm, efficiency, approach to parsing, etc.
+        -- Use the same data set to derive association rules in Weka and compare them to those derived from your program.
 
 **Files**:
 	
