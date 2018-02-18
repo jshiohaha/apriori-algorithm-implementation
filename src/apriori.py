@@ -85,9 +85,11 @@ def generate_itemsets_with_adequate_support(items, transactions, min_support, fr
     return temp_itemset
 
 
-def derive_association_rules(itemsets_dict, frequency_set, integer_to_data_dict, min_support, min_confidence, num_transactions):
+def derive_association_rules(itemsets_dict, frequency_set, transactions, integer_to_data_dict, min_support, min_confidence):
     print(">> Starting to generate association rules")
     association_rules = []
+
+    num_transactions = len(transactions)
 
     # k: all k values designating size of itemsets
     # v: all the actual k-itemsets, which is what .items() returns to iterate over
@@ -106,9 +108,13 @@ def derive_association_rules(itemsets_dict, frequency_set, integer_to_data_dict,
                     denominator = get_item_support(set_of_subsets, frequency_set, num_transactions)
                     confidence = round((numerator / denominator), 2)
 
-                    numerator_count = get_item_support_count(item, frequency_set)
+                    numerator_count = get_item_support_count(set_of_subsets, frequency_set)
                     denominator_count = get_item_support_count(item, frequency_set)
 
+                    # how to compute intersection between frozensets?
+                    # print("set_of_subsets: " + str(set_of_subsets))
+                    # print("difference: " + str(difference))
+                    
                     if  min_confidence <= confidence:
                         set_of_subsets = convert_itemset_ints_to_strs(set_of_subsets, integer_to_data_dict)
                         difference = convert_itemset_ints_to_strs(difference, integer_to_data_dict)
@@ -117,6 +123,7 @@ def derive_association_rules(itemsets_dict, frequency_set, integer_to_data_dict,
                         # can easily read/parse later
                         new_rule = (((list(set_of_subsets), numerator_count)), (list(difference), denominator_count)), confidence
                         association_rules.append(new_rule)
+
     print(">> Finished generating association rules. Found " + str(len(association_rules)) + " rules.")
     return association_rules
 

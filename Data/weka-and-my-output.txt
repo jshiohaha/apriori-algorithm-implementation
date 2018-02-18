@@ -1,0 +1,33 @@
+This program output...
+
+Rule 1: aid-to-nicaraguan-contras=y 257 ==> export-administration-act-south-africa=y 254 <conf: (0.99)>
+Rule 2: anti-satellite-test-ban=y 253 ==> export-administration-act-south-africa=y 250 <conf: (0.99)>
+Rule 3: adoption-of-the-budget-resolution=y 264 ==> export-administration-act-south-africa=y 259 <conf: (0.98)>
+Rule 4: physician-fee-freeze=n 258 ==> Class=democrat 253 <conf: (0.98)>
+Rule 5: physician-fee-freeze=n export-administration-act-south-africa=y 251 ==> Class=democrat 246 <conf: (0.98)>
+Rule 6: physician-fee-freeze=n 258 ==> export-administration-act-south-africa=y 251 <conf: (0.97)>
+Rule 7: physician-fee-freeze=n Class=democrat 253 ==> export-administration-act-south-africa=y 246 <conf: (0.97)>
+Rule 8: Class=democrat 267 ==> export-administration-act-south-africa=y 255 <conf: (0.96)>
+Rule 9: export-administration-act-south-africa=y Class=democrat 255 ==> physician-fee-freeze=n 246 <conf: (0.96)>
+Rule 10: education-spending=n 264 ==> export-administration-act-south-africa=y 251 <conf: (0.95)>
+Rule 11: Class=democrat 267 ==> physician-fee-freeze=n 253 <conf: (0.95)>
+Rule 12: physician-fee-freeze=n 258 ==> export-administration-act-south-africa=y Class=democrat 246 <conf: (0.95)>
+Rule 13: Class=democrat 267 ==> physician-fee-freeze=n export-administration-act-south-africa=y 246 <conf: (0.92)>
+
+Weka output...
+
+ 1. aid-to-nicaraguan-contras=y 257 ==> export-administration-act-south-africa=y 254 <conf:(0.99)>
+ 2. anti-satellite-test-ban=y 253 ==> export-administration-act-south-africa=y 250 <conf:(0.99)>
+ 3. adoption-of-the-budget-resolution=y 264 ==> export-administration-act-south-africa=y 259 <conf:(0.98)>
+ 4. physician-fee-freeze=n 258 ==> Class=democrat 253 <conf:(0.98)>
+ 5. physician-fee-freeze=n export-administration-act-south-africa=y 251 ==> Class=democrat 246 <conf:(0.98)>
+ 6. physician-fee-freeze=n 258 ==> export-administration-act-south-africa=y 251    <conf:(0.97)> 
+ 7. physician-fee-freeze=n Class=democrat 253 ==> export-administration-act-south-africa=y 246 <conf:(0.97)>
+ 8. export-administration-act-south-africa=y Class=democrat 255 ==> physician-fee-freeze=n 246 <conf:(0.96)>
+ 9. Class=democrat 267 ==> export-administration-act-south-africa=y 255 <conf:(0.96)> 
+10. physician-fee-freeze=n 258 ==> export-administration-act-south-africa=y Class=democrat 246 <conf:(0.95)> 
+11. education-spending=n 264 ==> export-administration-act-south-africa=y 251 <conf:(0.95)> 
+12. Class=democrat 267 ==> physician-fee-freeze=n 253 <conf:(0.95)>
+13. Class=democrat 267 ==> physician-fee-freeze=n export-administration-act-south-africa=y 246 <conf:(0.92)>
+
+
