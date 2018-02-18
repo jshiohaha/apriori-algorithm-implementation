@@ -63,7 +63,10 @@ def generate_itemsets_with_adequate_support(items, transactions, min_support, fr
         subset of the set of items where that set satisfies the minimum support
         requirement
    '''
-    temp_itemset = set()
+
+   # generate_itemsets_with_adequate_support(current_candidate_itemsets, transactions, min_support, frequency_set)
+   # items is current_candidate_itemsets
+    temporary_itemset = set()
     local_frequency_set = defaultdict(int)
 
     for item in items:
@@ -80,16 +83,14 @@ def generate_itemsets_with_adequate_support(items, transactions, min_support, fr
         support = float(c)/num_transactions
 
         if (support) >= min_support:
-            temp_itemset.add(i)
+            temporary_itemset.add(i)
 
-    return temp_itemset
+    return temporary_itemset
 
 
-def derive_association_rules(itemsets_dict, frequency_set, transactions, integer_to_data_dict, min_support, min_confidence):
+def derive_association_rules(itemsets_dict, frequency_set, integer_to_data_dict, min_support, min_confidence, num_transactions):
     print(">> Starting to generate association rules")
     association_rules = []
-
-    num_transactions = len(transactions)
 
     # k: all k values designating size of itemsets
     # v: all the actual k-itemsets, which is what .items() returns to iterate over
@@ -97,31 +98,31 @@ def derive_association_rules(itemsets_dict, frequency_set, transactions, integer
         for item in v:
             # creates a set for every element in the list of subsets set-minus the emptyset
             powerset_minus_emptyset = map(frozenset, [x for x in subsets(item)])
-            for set_of_subsets in powerset_minus_emptyset:
+            for subset in powerset_minus_emptyset:
                 # difference() is a python function that calculates difference between two sets
-                difference = item.difference(set_of_subsets)
+                difference = item.difference(subset)
                 # if sets are the same, we don't care
                 # if they are different, we can go ahead and calculate the confidence
                 # to see if we want to add the association rule
                 if len(difference) > 0:
                     numerator = get_item_support(item, frequency_set, num_transactions)
-                    denominator = get_item_support(set_of_subsets, frequency_set, num_transactions)
+                    denominator = get_item_support(subset, frequency_set, num_transactions)
                     confidence = round((numerator / denominator), 2)
 
-                    numerator_count = get_item_support_count(set_of_subsets, frequency_set)
+                    numerator_count = get_item_support_count(subset, frequency_set)
                     denominator_count = get_item_support_count(item, frequency_set)
 
                     # how to compute intersection between frozensets?
-                    # print("set_of_subsets: " + str(set_of_subsets))
+                    # print("subset: " + str(subset))
                     # print("difference: " + str(difference))
                     
                     if  min_confidence <= confidence:
-                        set_of_subsets = convert_itemset_ints_to_strs(set_of_subsets, integer_to_data_dict)
+                        subset = convert_itemset_ints_to_strs(subset, integer_to_data_dict)
                         difference = convert_itemset_ints_to_strs(difference, integer_to_data_dict)
 
                         # effectively groups the two parts of the rule together so that we
                         # can easily read/parse later
-                        new_rule = (((list(set_of_subsets), numerator_count)), (list(difference), denominator_count)), confidence
+                        new_rule = (((list(subset), numerator_count)), (list(difference), denominator_count)), confidence
                         association_rules.append(new_rule)
 
     print(">> Finished generating association rules. Found " + str(len(association_rules)) + " rules.")
