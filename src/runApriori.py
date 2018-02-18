@@ -122,10 +122,6 @@ def main():
 def run_apriori_and_generate_rules(transactions, items, min_support, min_confidence, output_filename, output_rules=True):
     itemsets_arr, global_itemset_dict, frequency_set = apriori.apriori(transactions, items, min_support)
 
-    pprint.pprint(integer_to_data)
-    print("\n")
-    pprint.pprint(frequency_set)
-
     # parse and create dictionary from serialized integer encoded dictionary
     association_rules = apriori.derive_association_rules(global_itemset_dict, frequency_set, transactions, integer_to_data, min_support, min_confidence)
 
