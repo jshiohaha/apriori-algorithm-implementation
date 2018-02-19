@@ -42,25 +42,48 @@ def parse_arff_file(filename):
         line = fp.readline()
 
         while line:
-            line = line.split(' ')
-            if line[0] == '@attribute':
-                header_arr.append(line[1])
-            elif line[0][:-1] == '@data':
+            if line[0] == '%':
+                line = fp.readline()
+                continue
+            line = line.split(" ")
+
+            if line[0].lower() == '@attribute':
+                line = line[1].replace('\t',' ')
+                line = line.split(" ")
+
+                if len(line[0]) > 1:
+                    line = line[0]
+                header_arr.append(line)
+
+            elif line[0][:-1].lower() == '@data':
                 data_start = True
                 line = fp.readline()
                 continue
 
-            if data_start:
-                file_contents.append(line[0][:-1])
+            elif data_start:
+                if len(line) == 1:
+                    line = line[0].replace('\n', '')
+
+                    if line == '' or line == '%':
+                        line = fp.readline()
+                        continue
+                    file_contents.append(line)
+                else:
+                    line = ''.join(line)
+                    if '?' in line:
+                        line = line.replace('?','NULL')
+                    line = line.replace('\n', '')
+                    file_contents.append(line)
+
             line = fp.readline()
 
+    print(">> Finished parsing arff file. Found " + str(len(header_arr)) + " header attributes and " + str(len(file_contents)) + " file contents instances.")
     return header_arr, file_contents
 
 
 def modify_original_csv_data(header_arr, file_contents):
     result_array, d_to_i, i_to_d = change_file_data(header_arr, file_contents)
     encoded_data = create_encoded_data(result_array, d_to_i)
-
     return encoded_data, d_to_i, i_to_d
 
 
@@ -75,8 +98,12 @@ def change_file_data(header, file_data):
 
         temp_arr = []
         for i, element in enumerate(arr):
-            newElement = header[i] + '=' + element
-            temp_arr.append(newElement)
+            if element == 'NULL':
+                temp_arr.append(-1)
+                continue
+            else:
+                newElement = header[i] + '=' + element
+                temp_arr.append(newElement)
 
             if newElement not in data_to_integer:
                 data_to_integer[newElement] = idx
@@ -96,7 +123,14 @@ def create_encoded_data(file_data, data_to_int):
 
         temp_arr = []
         for i, element in enumerate(arr):
-            newElement = data_to_int[element]
+            newElement = 0
+
+            try:
+                element = int(element)
+                continue
+            except:
+                newElement = data_to_int[element]
+
             temp_arr.append(newElement)
         new_line = ','.join(map(str,temp_arr))
         result_array.append(new_line)
