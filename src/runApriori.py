@@ -187,7 +187,6 @@ def run_apriori_and_generate_rules(transactions, items, min_support, min_confide
         if len(association_rules) == 0:
             print("No association rules to serialize")
         else:
-            print(">> Writing association rules to " + str(output_filename) + " sorted by confidence in descending order")
             serialize_rules(global_itemset_dict, association_rules, output_header, output_filename)
     else:
         return association_rules
@@ -204,13 +203,15 @@ def serialize_rules(global_itemset_dict, association_rules, output_header, outpu
 
         @Return: None
     """
+    print(">> Writing association rules to " + str(output_filename) + " sorted by confidence first and then support, in descending order")
+
     file = open(output_filename, 'w')
     file.write("Apriori\n")
     file.write("=======\n\n")
     file.write("{}\n\n".format(output_header))
 
     count = 1
-    for x in sorted(association_rules, key=lambda x: x[1], reverse=True):
+    for x in sorted(association_rules, key=lambda x: x[1] and x[2], reverse=True):
         rule, confidence, support = x[0], x[1], x[2]
 
         left_side, right_side = rule
