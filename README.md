@@ -1,5 +1,7 @@
 **Program Commands**
 
+*Note*: The `matplotlib` import in `runApriori.py` has been commented out along with the corresponding code pertaining to plotting the result of the stress tests. This is a result of the CSE server having an old version of the `matplotlib` package. However, the stress test option is a requirement in addition to the basic assignment requirements. To run the stress test and plot the output, upgrade `matplotlib` with the command `pip install --upgrade matpotlib`. I didn't have permission on the CSE server to upgrade the package myself.
+
 It should be noted that `apriori.py` was written in `Python 3.5.3`. To run the program, you can specify the input file with `-i `, the output file with `-o `, the minimum support with `-s support_number`, the confidence with `-c confidence_number`. If any of the parameters are left out, the program will exit with an error.
 
 Please note that the command you run depends on your relative working directory. For example, if you're in the `src/` folder, you will want to directly reference `runApriori.py`. If you're in the root folder of the repository, you will want to use `src/runApriori.py`. Further, if `python3` is not the default version of python, then you must use this command:

@@ -23,7 +23,7 @@ import pprint
 import numpy as np
 import fileUtils as fu
 import apriori as apriori
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from collections import defaultdict
 from functools import reduce
@@ -228,21 +228,21 @@ def stress_test_apriori(input_filename, delta, lower_bound, confidence):
 
     print(">> Printing the plot of runtime seconds and number of rules versus support")
 
-    x_axis = np.arange(lower_bound, 1+support_delta, support_delta)
-    x_axis = x_axis[::-1]
-    plt.plot(x_axis, runtime, color='r')
-    plt.xlabel('Level of Support (%)')
-    plt.ylabel('Number of seconds')
-    plt.title('Apriori algorithm performance varied with Support')
-    plt.show()
+    # x_axis = np.arange(lower_bound, 1+support_delta, support_delta)
+    # x_axis = x_axis[::-1]
+    # plt.plot(x_axis, runtime, color='r')
+    # plt.xlabel('Level of Support (%)')
+    # plt.ylabel('Number of seconds')
+    # plt.title('Apriori algorithm performance varied with Support')
+    # plt.show()
 
-    x_axis = np.arange(lower_bound, 1, support_delta)
-    x_axis = x_axis[::-1]
-    plt.plot(x_axis, rules, color='r')
-    plt.xlabel('Level of Support (%)')
-    plt.ylabel('Number of Rules')
-    plt.title('Number of rules generated varied with Support')
-    plt.show()
+    # x_axis = np.arange(lower_bound, 1, support_delta)
+    # x_axis = x_axis[::-1]
+    # plt.plot(x_axis, rules, color='r')
+    # plt.xlabel('Level of Support (%)')
+    # plt.ylabel('Number of Rules')
+    # plt.title('Number of rules generated varied with Support')
+    # plt.show()
 
 if __name__ == '__main__':
     main()
