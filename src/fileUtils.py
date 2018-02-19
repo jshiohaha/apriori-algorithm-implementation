@@ -34,19 +34,33 @@ from functools import reduce
 
 
 def parse_arff_file(filename):
+    """ Parse the arff file given to the program
+        by the user as a CLI argument.
+
+        @Input: filename
+        @Return: header_arr, file_contents
+    """
     file_contents = []
     header_arr = []
     data = []
     data_start = False
+
     with open(filename) as fp:  
         line = fp.readline()
 
         while line:
-            if line[0] == '%':
-                line = fp.readline()
-                continue
+            if '%' in line:
+                begin_comment_idx = line.index('%')
+                line = line[:- (len(line)-begin_comment_idx)]
+
+                # Entire line was a comment
+                if len(line) == 0:
+                    line = fp.readline()
+                    continue
+
             line = line.split(" ")
 
+            # Line begins with @attribute and should be stored in the header array
             if line[0].lower() == '@attribute':
                 line = line[1].replace('\t',' ')
                 line = line.split(" ")
@@ -54,40 +68,62 @@ def parse_arff_file(filename):
                 if len(line[0]) > 1:
                     line = line[0]
                 header_arr.append(line)
-
+            # Line begins with @data and we want to begin reading data immediatly after
             elif line[0][:-1].lower() == '@data':
                 data_start = True
                 line = fp.readline()
                 continue
-
+            # We have seen the @data attribute and should read the line of data
             elif data_start:
+                # If the line is of single length, it is either the entire line or an empty line
                 if len(line) == 1:
                     line = line[0].replace('\n', '')
 
-                    if line == '' or line == '%':
+                    # Line was simply a newline symbol
+                    if line == '':
                         line = fp.readline()
                         continue
+
                     file_contents.append(line)
+                # Line of data had spaces in it and we must clean the line of data to get ride of spaces
+                # and possibly null characters
                 else:
                     line = ''.join(line)
+                    # ? symbol can be used to denote missing data in arff file
                     if '?' in line:
                         line = line.replace('?','NULL')
-                    line = line.replace('\n', '')
+                    line = line.replace('\n', '').replace('\t','')
                     file_contents.append(line)
-
             line = fp.readline()
 
     print(">> Finished parsing arff file. Found " + str(len(header_arr)) + " header attributes and " + str(len(file_contents)) + " file contents instances.")
     return header_arr, file_contents
 
 
-def modify_original_csv_data(header_arr, file_contents):
-    result_array, d_to_i, i_to_d = change_file_data(header_arr, file_contents)
+def convert_original_file_data_to_encoded_data(header_arr, file_contents):
+    """ Prepend the header attributes and the file data and then use an
+        integer encoding to again convert the data to be used in apriori
+        algorithm and association rule generation.
+
+        The d_to_i and i_to_d are dictionaries that map file data to integers
+        and map integers to file data.
+
+        @Input: header_arr, file_contents
+        @Return: encoded_data, d_to_i, i_to_d
+    """
+    result_array, d_to_i, i_to_d = prepend_column_name_to_data(header_arr, file_contents)
     encoded_data = create_encoded_data(result_array, d_to_i)
     return encoded_data, d_to_i, i_to_d
 
 
-def change_file_data(header, file_data):
+def prepend_column_name_to_data(header_arr, file_data):
+    """ Prepends the column name to each instance of the data
+        such that any columns with the same classes will be
+        discernible from each other.
+
+        @Input: header_arr, file_data
+        @Return: result_array, data_to_integer, integer_to_data
+    """
     result_array = []
     data_to_integer = {}
     integer_to_data = {}
@@ -102,7 +138,7 @@ def change_file_data(header, file_data):
                 temp_arr.append(-1)
                 continue
             else:
-                newElement = header[i] + '=' + element
+                newElement = header_arr[i] + '=' + element
                 temp_arr.append(newElement)
 
             if newElement not in data_to_integer:
@@ -116,6 +152,12 @@ def change_file_data(header, file_data):
 
 
 def create_encoded_data(file_data, data_to_int):
+    """ Use the data_to_int dictionary to map file data
+        to integers and create a new list of transactions.
+
+        @Input: file_data, data_to_int
+        @Return: result_array
+    """
     result_array = []
 
     for row in file_data:
@@ -130,7 +172,6 @@ def create_encoded_data(file_data, data_to_int):
                 continue
             except:
                 newElement = data_to_int[element]
-
             temp_arr.append(newElement)
         new_line = ','.join(map(str,temp_arr))
         result_array.append(new_line)

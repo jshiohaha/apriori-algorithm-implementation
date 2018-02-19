@@ -2,8 +2,7 @@
     Data Mining Assignment 2 - CSCE 474/874
     Authors: Arun Narenthiran Veeranampalayam Sivakumar & Jacob Shiohira
 
-    Implementation of the Apriori algorithm (without database connectivity),
-    transaction list is generated from the vote.arff --> vote.csv input file
+    Implementation of the Apriori algorithm (without database connectivity)
 
     ---------------------
     | Algorithm Outline |
@@ -26,11 +25,20 @@ import apriori as apriori
 # import matplotlib.pyplot as plt
 
 from collections import defaultdict
-from functools import reduce
+from pathlib import Path
 
 
 def main():
-    global N
+    """ Main function deals with parsing user input and calling appropriate functions
+        based on which version of the program was called by the user:
+
+        - normal apriori execution and association rule generation
+        - stress testing the runtime and number of rules generated
+          by the algorithm
+
+        @Input: None
+        @Return: None
+    """
     global integer_to_data
     global data_to_integer
 
@@ -41,7 +49,7 @@ def main():
 
     arg_length = len(sys.argv)
 
-    # lower bound, support delta
+    # Start the stress test version of the program
     if '--stress-test' in sys.argv:
         delta = 0
         lower_bound = 0
@@ -89,6 +97,7 @@ def main():
 
         stress_test_apriori(input_filename, delta, lower_bound, confidence)
         return
+    # Start the normal execution of the program - calling the apriori algorithm and rule generation
     else:
         if arg_length > 9:
             print("Too many parameters. Exiting...")
@@ -100,12 +109,16 @@ def main():
 
                 if isinstance(sys.argv[idx+1], str):
                     input_filename = sys.argv[idx+1]
+
+                    user_file = Path(input_filename)
+                    if not user_file.exists() or not user_file.is_file():
+                        print("Filename: {} does not exist. Exiting...".format(user_file))
+                        sys.exit()
+
                     print("Using the specified value for input filename: " + str(input_filename))
                 else:
                     print("Incorrect paramter specification. Exiting...")
                     sys.exit()
-
-            # Grab output filename
             if '-o' in sys.argv:
                 idx = sys.argv.index('-o')
 
@@ -115,8 +128,6 @@ def main():
                 else:
                     print("Incorrect paramter specification. Exiting...")
                     sys.exit()
-
-            # Grab support amount
             if '-s' in sys.argv:
                 idx = sys.argv.index('-s')
 
@@ -126,8 +137,6 @@ def main():
                 except:
                     print("Incorrect paramter specification. Exiting...")
                     sys.exit()
-
-            # Grab confidence amount
             if '-c' in sys.argv:
                 idx = sys.argv.index('-c')
 
@@ -147,35 +156,62 @@ def main():
                 print("Using the default value for min_support: " + str(min_confidence))
 
     header_arr, file_contents = fu.parse_arff_file(input_filename)
-    encoded_data, data_to_integer, integer_to_data = fu.modify_original_csv_data(header_arr, file_contents)
+    encoded_data, data_to_integer, integer_to_data = fu.convert_original_file_data_to_encoded_data(header_arr, file_contents)
 
     print(">> Creating transaction list and generating items")
     transaction_list, items = apriori.get_transactions_and_items_data(encoded_data)
-    N = len(transaction_list)
     run_apriori_and_generate_rules(transaction_list, items, min_support, min_confidence, output_filename)
 
 
 def run_apriori_and_generate_rules(transactions, items, min_support, min_confidence, output_filename, output_rules=True):
-    itemsets_arr, global_itemset_dict, frequency_set = apriori.apriori(transactions, items, min_support)
+    """ Take the necessary parameters after the main function parses the CLI arguments to start
+        the apriori algorithm and generate all association rules.
+        
+        @Input:
+        transactions: list of frozensets of transactions
+        items: list of 1-itemsets
+        min_support: minimum support to use when calculating candidate itemsets and validating itemsets
+        min_confidence: minimum confidence to use when generating rules
+        output_filename: filename to which the program will write association rules
+        output_rules: If set to True, the program will serialize the rules to a file, as specified on the command line.
+                      If set to False, the function will simply return the array of rules for use in stress testing.
 
-    # parse and create dictionary from serialized integer encoded dictionary
-    association_rules = apriori.derive_association_rules(global_itemset_dict, frequency_set, integer_to_data, min_support, min_confidence, N)
+        @Return: None or association_rules (depends on output_rules)
+    """
+    N = len(transactions)
+
+    global_itemset_dict, frequency_set = apriori.apriori(transactions, items, min_support)
+    association_rules, output_header = apriori.derive_association_rules(global_itemset_dict, frequency_set, integer_to_data, min_support, min_confidence, N)
 
     if output_rules:
         if len(association_rules) == 0:
             print("No association rules to serialize")
         else:
             print(">> Writing association rules to " + str(output_filename) + " sorted by confidence in descending order")
-            serialize_rules(global_itemset_dict, association_rules, output_filename)
+            serialize_rules(global_itemset_dict, association_rules, output_header, output_filename)
     else:
         return association_rules
 
 
-def serialize_rules(global_itemset_dict, association_rules, output_filename):
+def serialize_rules(global_itemset_dict, association_rules, output_header, output_filename):
+    """ Given the list of association rules and the output header containing information about
+        the number of k-itemsets generated, this function writes the association rules to file.
+        
+        Format of a single rule in the output mimics Weka output:
+        left_hand_side rhs_support_count ==> right_hand_side rhs_support_count <conf: confidence> <supp: support>
+
+        @Input
+
+        @Return: None
+    """
     file = open(output_filename, 'w')
+    file.write("Apriori\n")
+    file.write("=======\n\n")
+    file.write("{}\n\n".format(output_header))
+
     count = 1
     for x in sorted(association_rules, key=lambda x: x[1], reverse=True):
-        rule, confidence = x[0], x[1]
+        rule, confidence, support = x[0], x[1], x[2]
 
         left_side, right_side = rule
         left_side_list, left_support = left_side
@@ -183,39 +219,54 @@ def serialize_rules(global_itemset_dict, association_rules, output_filename):
 
         left = " ".join(left_side_list) + " " + str(left_support)
         right = " ".join(right_side_list) + " " + str(right_support)
-        conf = "<conf: (" + str(confidence) + ")>"
-        rule = left + " ==> " + right + " " + conf
-        file.write("Rule " + str(count) + ": " + rule + "\n")
+        rule = "{} ==> {} <conf: {}> <supp: {}>".format(left, right, confidence, support)
+        file.write("Rule {}: {}\n".format(count, rule))
         count += 1
     file.close()
 
 
 def stress_test_apriori(input_filename, delta, lower_bound, confidence):
+    """ Run the apriori algorithm from a minimum support of 1.0. Decrement the 
+        minimum_support by delta, run the algorithm again. Continue while 
+        minimum_support is greater than lower_bound.
+
+        The runtime of the algorithm and number of rules generated will then
+        be plotted after the minimum_support is decremented to a value less
+        than lower_bound.
+
+        @Input: 
+        input_filename: the input filename from which the program will read data
+        delta: the amount that minimum support will be decremented by before each
+               iteration of the stress test
+        lower_bound: the lowest value of minimum support to consider when stress
+                     testing the apriori algorithm and number of rules generated
+        confidence: minimum confidence to use when generating association rules
+        @Return: None
+    """
     global integer_to_data
     global data_to_integer
-    global N
 
-    # get file data
-    header_arr, file_contents = fu.parse_arff_file(input_filename)
-    encoded_data, data_to_integer, integer_to_data = fu.modify_original_csv_data(header_arr, file_contents)
-    transaction_list, items = apriori.get_transactions_and_items_data(encoded_data)
-    N = len(transaction_list)
-
-    # we want runtime and number of rules generated by minimum support
     min_support = 1.0
     support_delta = float(delta)
     fixed_confidence = float(confidence)
     lower_bound = float(lower_bound)
 
-    print(support_delta)
+    header_arr, file_contents = fu.parse_arff_file(input_filename)
+    encoded_data, data_to_integer, integer_to_data = fu.convert_original_file_data_to_encoded_data(header_arr, file_contents)
+
+    transaction_list, items = apriori.get_transactions_and_items_data(encoded_data)
+    N = len(transaction_list)
+
     runtime = []
     rules = []
     while min_support > lower_bound:
         print(">> Stress testing apriori with min_support: " + str(min_support))
 
+        # START timer before algorithm begins execution
         start = time.time()
         association_rules = run_apriori_and_generate_rules(transaction_list, items, min_support, fixed_confidence, None, output_rules=False)
         end = time.time()
+        # END timer after algorithm ends execution
 
         runtime.append(end-start)
         rules.append(len(association_rules))
@@ -223,8 +274,6 @@ def stress_test_apriori(input_filename, delta, lower_bound, confidence):
         print(">> Runtime was " + str(end-start) + ". Found " + str(len(association_rules)) + " rules.")
 
         min_support = min_support - support_delta
-
-        print("min_support: " + str(min_support))
 
     print(">> Printing the plot of runtime seconds and number of rules versus support")
 
@@ -243,6 +292,7 @@ def stress_test_apriori(input_filename, delta, lower_bound, confidence):
     # plt.ylabel('Number of Rules')
     # plt.title('Number of rules generated varied with Support')
     # plt.show()
+
 
 if __name__ == '__main__':
     main()
